@@ -1,92 +1,230 @@
-`include "discipline.h"
-`include "constants.h"
-
-////////// Numerical and Physical Constants //////////
-`define DOS 3.240e17           //Density of states, Reference M. Shur Plenum Press 1987, GaAs Device and Circuits
-`define ep_psi 0.3             //Smoothing Constant
-`define Oneby3 0.33333333333333333
-`define Twoby3 0.66666666666666667
-`define EXPL_THRESHOLD 80.0
-`define MAX_EXPL 5.540622384e+34
-`define MIN_EXPL 1.804851387e-35
-`define KboQ 8.617087e-5       // J/deg
-////////// Macros for the model/instance parameters //////////
-/*                  定义宏
- MPRxx    model    parameter real
- MPIxx    model    parameter integer
- IPRxx    instance parameter real
- IPIxx    instance parameter integer
-    ||
-    cc    closed lower bound, closed upper bound
-    oo    open   lower bound, open   upper bound
-    co    closed lower bound, open   upper bound
-    oc    open   lower bound, closed upper bound
-    cz    closed lower bound=0, open upper bound=inf
-    oz    open   lower bound=0, open upper bound=inf
-    nb    no bounds
-    ex    no bounds with exclude
-    sw    switch(integer only, values  0=false  and  1=true)
-    ty    switch(integer only, values -1=p-type and +1=n-type)
-
- IPM   instance parameter mFactor(multiplicity, implicit for LRM2.2)
- OPP   operating point parameter, includes units and description for printing
- */
-
-`define OPP(nam,uni,des)               (*units=uni,                   desc=des*)           real    nam ;
-`define MPRnb(nam,def,uni,        des) (*units=uni,                   desc=des*) parameter real    nam=def ;
-`define MPRex(nam,def,uni,exc,    des) (*units=uni,                   desc=des*) parameter real    nam=def exclude exc ;
-`define MPRcc(nam,def,uni,lwr,upr,des) (*units=uni,                   desc=des*) parameter real    nam=def from[lwr:upr] ;
-`define MPRoo(nam,def,uni,lwr,upr,des) (*units=uni,                   desc=des*) parameter real    nam=def from(lwr:upr) ;
-`define MPRco(nam,def,uni,lwr,upr,des) (*units=uni,                   desc=des*) parameter real    nam=def from[lwr:upr) ;
-`define MPRoc(nam,def,uni,lwr,upr,des) (*units=uni,                   desc=des*) parameter real    nam=def from(lwr:upr] ;
-`define MPRcz(nam,def,uni,        des) (*units=uni,                   desc=des*) parameter real    nam=def from[  0:inf);
-`define MPRoz(nam,def,uni,        des) (*units=uni,                   desc=des*) parameter real    nam=def from(  0:inf);
-`define MPInb(nam,def,uni,        des) (*units=uni,                   desc=des*) parameter integer nam=def ;
-`define MPIex(nam,def,uni,exc,    des) (*units=uni,                   desc=des*) parameter integer nam=def exclude exc ;
-`define MPIcc(nam,def,uni,lwr,upr,des) (*units=uni,                   desc=des*) parameter integer nam=def from[lwr:upr] ;
-`define MPIoo(nam,def,uni,lwr,upr,des) (*units=uni,                   desc=des*) parameter integer nam=def from(lwr:upr) ;
-`define MPIco(nam,def,uni,lwr,upr,des) (*units=uni,                   desc=des*) parameter integer nam=def from[lwr:upr) ;
-`define MPIoc(nam,def,uni,lwr,upr,des) (*units=uni,                   desc=des*) parameter integer nam=def from(lwr:upr] ;
-`define MPIcz(nam,def,uni,        des) (*units=uni,                   desc=des*) parameter integer nam=def from[  0:inf);
-`define MPIoz(nam,def,uni,        des) (*units=uni,                   desc=des*) parameter integer nam=def from(  0:inf);
-`define MPIsw(nam,def,uni,        des) (*units=uni,                   desc=des*) parameter integer nam=def from[  0:  1];
-`define MPIty(nam,def,uni,        des) (*units=uni,                   desc=des*) parameter integer nam=def from[ -1:  1] exclude 0 ;
-`define IPRnb(nam,def,uni,        des) (*units=uni, type="instance",  desc=des*) parameter real    nam=def ;
-`define IPRex(nam,def,uni,exc,    des) (*units=uni, type="instance",  desc=des*) parameter real    nam=def exclude exc ;
-`define IPRcc(nam,def,uni,lwr,upr,des) (*units=uni, type="instance",  desc=des*) parameter real    nam=def from[lwr:upr] ;
-`define IPRoo(nam,def,uni,lwr,upr,des) (*units=uni, type="instance",  desc=des*) parameter real    nam=def from(lwr:upr) ;
-`define IPRco(nam,def,uni,lwr,upr,des) (*units=uni, type="instance",  desc=des*) parameter real    nam=def from[lwr:upr) ;
-`define IPRoc(nam,def,uni,lwr,upr,des) (*units=uni, type="instance",  desc=des*) parameter real    nam=def from(lwr:upr] ;
-`define IPRcz(nam,def,uni,        des) (*units=uni, type="instance",  desc=des*) parameter real    nam=def from[  0:inf);
-`define IPRoz(nam,def,uni,        des) (*units=uni, type="instance",  desc=des*) parameter real    nam=def from(  0:inf);
-`define IPInb(nam,def,uni,        des) (*units=uni, type="instance",  desc=des*) parameter integer nam=def ;
-`define IPIex(nam,def,uni,exc,    des) (*units=uni, type="instance",  desc=des*) parameter integer nam=def exclude exc ;
-`define IPIcc(nam,def,uni,lwr,upr,des) (*units=uni, type="instance",  desc=des*) parameter integer nam=def from[lwr:upr] ;
-`define IPIoo(nam,def,uni,lwr,upr,des) (*units=uni, type="instance",  desc=des*) parameter integer nam=def from(lwr:upr) ;
-`define IPIco(nam,def,uni,lwr,upr,des) (*units=uni, type="instance",  desc=des*) parameter integer nam=def from[lwr:upr) ;
-`define IPIoc(nam,def,uni,lwr,upr,des) (*units=uni, type="instance",  desc=des*) parameter integer nam=def from(lwr:upr] ;
-`define IPIcz(nam,def,uni,        des) (*units=uni, type="instance",  desc=des*) parameter integer nam=def from[  0:inf);
-`define IPIoz(nam,def,uni,        des) (*units=uni, type="instance",  desc=des*) parameter integer nam=def from(  0:inf);
-
-/*
-Not all Verilog-A compilers are able to properly collapse internal nodes. To ensure minimal node
-count, comment out the following lines:
-*/
-
-`define __FP1MOD__    /*定义场板*/
-`define __FP2MOD__
-`define __FP3MOD__
-`define __FP4MOD__
-
-////////// Function for VG0 Calculation //////////
-`define VG0(l,w,Voff_dibl_temp,imin,Vgs,Vtv,Vg0) \   
-t0     = l/(2.0*w*`P_Q*`DOS*Vtv*Vtv); \   //t0代表啥?
-vgmin  = Voff_dibl_temp + Vtv*ln(t0*imin); \  //Vgs,min?
-vggmin = 0.5*((Vgs-vgmin) + sqrt((Vgs-vgmin)*(Vgs-vgmin) + 1.0e-4)) + vgmin; \   //Vgs,eff?
-Vg0    = vggmin - Voff_dibl_temp;  //Vg0=Vgs_eff-Voff_dibl_temp
-//Vtv=KB*Tdev*cdsc   Tdev=T+V(rth)  cdsc=1+NFACTOR+(CDSCD+cdscd_trap)*Vdsx
-
-
 
 目前能够将   陷阱效应    和    场板效应    以及    自热效应   接触区电阻    模型的开关关闭，
 剩下了栅电流、电容参数、量子经效应、交叠耦合电容参数、栅电阻、噪声模型、收敛参数gdsmin
+
+////////// List Of Model Parameters //////////
+    `MPRco( tnom           ,27.0           ,"K"           ,-`P_CELSIUS0,inf         ," Nominal Temperature in degree Celsius" )
+    `MPRco( tbar           ,2.5e-8         ,"m"           ,0.1e-9      ,inf         ," Barrier layer thickness" )
+    `IPRco( l              ,0.25e-6        ,"m"           ,20e-9       ,inf         ," Channel Length" )
+    `IPRco( w              ,200.0e-6       ,"m"           ,20e-9       ,inf         ," Channel Width" )
+    `IPIco( nf             ,1              ,""            ,1.0         ,inf         ," Number of fingers" )
+    `MPRoo( epsilon        ,10.66e-11      ,"F/m"         ,0.0         ,inf         ," Dielectric Permittivity of AlGaN layer" )
+    `MPRcc( voff           ,-2.0           ,"V"           ,-100.0      ,5           ," Cut-off voltage" )
+    `MPRco( u0             ,170.0e-3       ,"m^2/(V * s)" ,0.0         ,inf         ," Low field mobility" )
+    `MPRco( ua             ,0.0e-9         ,"V^-1"        ,0.0         ,inf         ," Mobility Degradation coefficient first order" )
+    `MPRco( ub             ,0.0e-18        ,"V^-2"        ,0.0         ,inf         ," Mobility Degradation coefficient second order" )
+    `MPRco( vsat           ,1.9e5          ,"m/s"         ,1.0e3       ,inf         ," Saturation Velocity" )
+    `MPRco( delta          ,2.0            ,""            ,2.0         ,inf         ," Exponent for Vdeff" )
+    `MPRoo( at             ,0.0            ,""            ,-inf        ,inf         ," Temperature Dependence for saturation velocity" )
+    `MPRcc( ute            ,-0.5           ,""            ,-10.0       ,0           ," Temperature dependence of mobility" )
+    `MPRco( lambda         ,0.0            ,"V^-1"        ,0.0         ,inf         ," Channel Length Modulation Coefficient" )
+    `MPRco( eta0           ,1.0e-9         ,""            ,0.0         ,inf         ," DIBL Parameter" )
+    `MPRoo( vdscale        ,5.0            ,"V"           ,0.0         ,inf         ," DIBL Scaling VDS" )
+    `MPRoo( kt1            ,0.0e-3         ,""            ,-inf        ,inf         ," Temperature Dependence for Voff" )
+    `MPRco( thesat         ,1.0            ,"V^-2"        ,1.0         ,inf         ," Velocity Saturation Parameter" )
+    `MPRco( nfactor        ,0.5            ,""            ,0.0         ,inf         ," Sub-voff Slope parameters" )
+    `MPRco( cdscd          ,1.0e-3         ,""            ,0.0         ,inf         ," Sub-voff Slope Change due to Drain Voltage" )
+    `MPRcc( gamma0i        ,2.12e-12       ,""            ,0.0         ,1.0         ," Schrodinger-Poisson solution parameter" )
+    `MPRcc( gamma1i        ,3.73e-12       ,""            ,0.0         ,1.0         ," Schrodinger-Poisson solution parameter" )
+    `MPRoo( imin           ,1.0e-15        ,"A"           ,0.0         ,inf         ," Minimum Drain Current" )
+    
+////////// Self Heating Model Parameters //////////
+    `MPIsw( shmod          ,1              ,""            ," Switch to turn on and off self-heating model" )
+    `MPRco( rth0           ,5.0            ,"K/w"         ,0.0         ,inf         ," Thermal Resistance" )
+    `MPRco( cth0           ,1.0e-9         ,"s*w/K"       ,0.0         ,inf         ," Thermal Capacitance" )
+    
+////////// Access Region Resistance Model Parameters //////////
+    `MPIsw( rdsmod         ,0              ,""            ," Switch for external source and drain resistances" )
+    `MPRoo( vsataccs       ,50.0e3         ,"cm/s"        ,0.0         ,inf         ," Saturation Velocity for access region: Source Side" )
+    `MPRco( ns0accs        ,5.0e17         ,"C/m^-2"      ,1.0e5       ,inf         ," 2-DEG Charge Density in per square meter in Source access region" )
+    `MPRco( ns0accd        ,5.0e17         ,"C/m^-2"      ,1.0e5       ,inf         ," 2-DEG Charge Density in per square meter in Drain access region" )
+    `MPRco( k0accs         ,0.0            ,""            ,0.0         ,inf         ," Vg dependence parameter of source side access region 2-DEG charge density" )
+    `MPRco( k0accd         ,0.0            ,""            ,0.0         ,inf         ," Vg dependence parameter of drain side access region 2-DEG charge density" )
+    `MPRoo( u0accs         ,155e-3         ,"m^2/(V * s)" ,0.0         ,inf         ," Access region mobility source-side" )
+    `MPRoo( u0accd         ,155e-3         ,"m^2/(V * s)" ,0.0         ,inf         ," Access region mobility drain-side" )
+    `MPRoo( mexpaccs       ,2.0            ,""            ,0.0         ,inf         ," Exponent for access region resistance model" )
+    `MPRoo( mexpaccd       ,2.0            ,""            ,0.0         ,inf         ," Exponent for access region resistance model" )
+    `MPRco( lsg            ,1.0e-6         ,"m"           ,0.0         ,inf         ," Length of Source-Gate Access Region" )
+    `MPRco( ldg            ,1.0e-6         ,"m"           ,0.0         ,inf         ," Length of Drain-Gate Access Region or Length of drain side access region" )
+    `MPRco( rsc            ,1.0e-4         ,"ohm*m"       ,0.0         ,inf         ," Source Contact Resistance" )
+    `MPRco( rdc            ,1.0e-4         ,"ohm*m"       ,0.0         ,inf         ," Drain Contact Resistance" )
+    `MPRco( kns0           ,0.0            ,""            ,0.0         ,inf         ," Temperature Dependence for 2-DEG charge density at access region" )
+    `MPRoo( ats            ,0.0            ,""            ,-inf        ,inf         ," Temperature Dependence for saturation velocity at access region" )
+    `MPRoo( utes           ,0.0            ,""            ,-inf        ,inf         ," Temperature dependence of mobility at access region: Source Side" )
+    `MPRoo( uted           ,0.0            ,""            ,-inf        ,inf         ," Temperature dependence of mobility at access region: Drain Side" )
+    `MPRco( krsc           ,0.0            ,""            ,0.0         ,inf         ," Temperature dependence of Source Contact Resistance" )
+    `MPRco( krdc           ,0.0            ,""            ,0.0         ,inf         ," Temperature dependence of Drain Contact Resistance" )
+    `MPIsw( gatemod        ,0              ,""            ," Gate current model flag [0: No gate current; 1: Basic model]" )
+    
+////////// Gate current Model Parameters (MOD1) //////////
+    `MPRoo( njgs           ,2.5            ,""            ,0.0         ,50.0        ," Gate-source junction diode current ideality factor" )
+    `MPRoo( njgd           ,2.5            ,""            ,0.0         ,50.0        ," Gate-drain junction diode current ideality factor" )
+    `MPRco( igsdio         ,1.0            ,"A/m^2"       ,0.0         ,inf         ," Gate-source junction diode saturation current" )
+    `MPRco( igddio         ,1.0            ,"A/m^2"       ,0.0         ,inf         ," Gate-drain junction diode saturation current" )
+    `MPRoo( ktgs           ,0.0            ,""            ,-inf        ,inf         ," Temperature co-efficient of gate-source junction diode current" )
+    `MPRoo( ktgd           ,0.0            ,""            ,-inf        ,inf         ," Temperature coefficient of gate-drain junction diode current" )
+    `MPIcc( trapmod        ,0              ,""            ,0           ,3           ," Model Switch to turn on and off the dynamic trapping effects" )
+    
+////////// Trap Model For RF trapmod=1 //////////
+    `MPRoo( cdlag          ,1.0e-6         ,""            ,0.0         ,inf         ," Trap Network capacitance" )
+    `MPRoo( rdlag          ,1.0e6          ,""            ,0.0         ,inf         ," Trap Network resistance" )
+    `MPRoo( idio           ,1.0e0          ,"A"           ,0.0         ,inf         ," Saturation Current parameter for trap model" )
+    `MPRoo( atrapvoff      ,0.1            ,""            ,-inf        ,inf         ," Voff change due to trapping effects" )
+    `MPRoo( btrapvoff      ,0.3            ,""            ,-inf        ,inf         ," Voff change with input power due to trapping effects" )
+    `MPRoo( atrapeta0      ,0              ,""            ,-inf        ,inf         ," DIBL change due to trapping effects" )
+    `MPRoo( btrapeta0      ,0.05           ,""            ,-inf        ,inf         ," DIBL change with input power due to trapping effects" )
+    `MPRoo( atraprs        ,0.1            ,""            ,-inf        ,inf         ," Rs change due to trapping effects" )
+    `MPRoo( btraprs        ,0.6            ,""            ,-inf        ,inf         ," Rs change with input power due to trapping effects" )
+    `MPRoo( atraprd        ,0.5            ,""            ,-inf        ,inf         ," Rd change due to trapping effects" )
+    `MPRoo( btraprd        ,0.6            ,""            ,-inf        ,inf         ," Rd change with input power due to trapping effects" )
+    
+////////// Trap Model Parameters for Pulse IV trapmod=2 //////////
+    `MPRoo( rtrap1         ,1.0            ,"ohm"         ,0.0         ,inf         ," Trap Network1 Resistance" )
+    `MPRoo( rtrap2         ,1.0            ,"ohm"         ,0.0         ,inf         ," Trap Network2 Resistance" )
+    `MPRco( ctrap1         ,10.0e-6        ,"F"           ,0.0         ,inf         ," Trap Network1 Capacitance" )
+    `MPRco( ctrap2         ,1.0e-6         ,"F"           ,0.0         ,inf         ," Trap Network2 Capacitance" )
+    `MPRoo( a1             ,0.1            ,""            ,-inf        ,inf         ," Multiplication factor [1st network]" )
+    `MPRoo( vofftr         ,1.0e-9         ,""            ,-inf        ,inf         ," Trap contribution to voff [2nd network]" )
+    `MPRoo( cdscdtr        ,1.0e-15        ,""            ,-inf        ,inf         ," Trap contribution to cdscd [2nd network]" )
+    `MPRoo( eta0tr         ,1.0e-15        ,""            ,-inf        ,inf         ," Trap contribution to DIBL [2nd network]" )
+    `MPRoo( rontr1         ,1.0e-12        ,""            ,-inf        ,inf         ," Trap contribution to RON [1st network]" )
+    `MPRoo( rontr2         ,1.0e-13        ,""            ,-inf        ,inf         ," Trap contribution to RON [2nd network]" )
+    `MPRoo( rontr3         ,1.0e-13        ,""            ,-inf        ,inf         ," Trap contribution to RON" )
+    
+////////// Trap Model Parameters Dynamic On Resistance For Power Devices trapmod=3 //////////
+    `MPRoo( rtrap3         ,1.0            ,"ohm"         ,0.0         ,inf         ," Trap Network Resistance" )
+    `MPRco( ctrap3         ,1.0e-4         ,"F"           ,0.0         ,inf         ," Trap Network Capacitance" )
+    `MPRoo( vatrap         ,10.0           ,""            ,0.0         ,inf         ," Division factor for V[trap1]" )
+    `MPRoo( wd             ,0.016          ,""            ,-inf        ,inf         ," Weak dependence of vdlr1 on Vdg" )
+    `MPRoo( vdlr1          ,2.0            ,""            ,-inf        ,inf         ," Slope for region one" )
+    `MPRoo( vdlr2          ,20.0           ,""            ,-inf        ,inf         ," Slope for region two" )
+    `MPRoo( talpha         ,1.0            ,""            ,-inf        ,inf         ," Temperature dependence Coefficient" )
+    `MPRco( vtb            ,250.0          ,"V"           ,0.0         ,inf         ," Break Point for Vdg effect on Von" )
+    `MPRco( deltax         ,0.01           ,""            ,0.0         ,inf         ," Smoothing parameter" )
+    
+////////// Field Plate Region Parameters //////////
+    `MPIcc( fp1mod         ,0              ,""            ,0           ,2           ," Field Plate Model Selector [0:No FP; 1:Gate FP; 2:Source FP;]" )
+    `MPIcc( fp2mod         ,0              ,""            ,0           ,2           ," Field Plate Model Selector [0:No FP; 1:Gate FP; 2:Source FP;]" )
+    `MPIcc( fp3mod         ,0              ,""            ,0           ,2           ," Field Plate Model Selector [0:No FP; 1:Gate FP; 2:Source FP;]" )
+    `MPIcc( fp4mod         ,0              ,""            ,0           ,2           ," Field Plate Model Selector [0:No FP; 1:Gate FP; 2:Source FP;]" )
+    `MPRoo( iminfp1        ,1.0e-15        ,"A"           ,0.0         ,inf         ," Minimum Drain Current FP1 region" )
+    `MPRcc( vofffp1        ,-25.0          ,"V"           ,-500.0      ,5           ," voff for FP1" )
+    `IPRco( dfp1           ,50.0e-9        ,"m"           ,0.1e-9      ,inf         ," Distance of FP1 from 2-DEG Charge" )
+    `IPRoo( lfp1           ,1.0e-6         ,"m"           ,0.0         ,inf         ," Length of FP1" )
+    `MPRoo( ktfp1          ,50.0e-3        ,""            ,-inf        ,inf         ," Temperature Dependence for vofffp1" )
+    `MPRco( u0fp1          ,100e-3         ,"m^2/(V * s)" ,0.0         ,inf         ," FP1 region mobility" )
+    `MPRco( vsatfp1        ,100e+3         ,"m/s"         ,0.0         ,inf         ," Saturation Velocity of FP1 region" )
+    `MPRco( nfactorfp1     ,0.5            ,""            ,0.0         ,inf         ," Sub-voff Slope parameters for FP1" )
+    `MPRco( cdscdfp1       ,0.0            ,""            ,0.0         ,inf         ," Sub-voff Slope Change due to Drain Voltage for FP1" )
+    `MPRco( eta0fp1        ,1.0e-9         ,""            ,0.0         ,inf         ," DIBL Parameter for FP1" )
+    `MPRoo( vdscalefp1     ,10.0           ,"V"           ,0.0         ,inf         ," DIBL Scaling VDS for FP1" )
+    `MPRcc( gamma0fp1      ,2.12e-12       ,""            ,0.0         ,1.0         ," Schrodinger-Poisson solution parameter for FP1" )
+    `MPRcc( gamma1fp1      ,3.73e-12       ,""            ,0.0         ,1.0         ," Schrodinger-Poisson solution parameter for FP1" )
+    `MPRoo( iminfp2        ,1.0e-15        ,"A"           ,0.0         ,inf         ," Minimum Drain Current FP2 region" )
+    `MPRcc( vofffp2        ,-50.0          ,"V"           ,-100.0      ,5           ," voff for FP2" )
+    `IPRco( dfp2           ,100.0e-9       ,"m"           ,0.1e-9      ,inf         ," Distance of FP2 from 2-DEG Charge" )
+    `IPRoo( lfp2           ,1.0e-6         ,"m"           ,0.0         ,inf         ," Length of FP2" )
+    `MPRoo( ktfp2          ,50.0e-3        ,""            ,-inf        ,inf         ," Temperature Dependence for vofffp2" )
+    `MPRco( u0fp2          ,100e-3         ,"m^2/(V * s)" ,0.0         ,inf         ," Carrier mobility of FP2 region" )
+    `MPRco( vsatfp2        ,100e+3         ,"m/s"         ,0.0         ,inf         ," Saturation velocity of FP2 region" )
+    `MPRco( nfactorfp2     ,0.5            ,""            ,0.0         ,inf         ," Sub-voff Slope parameters for FP2" )
+    `MPRco( cdscdfp2       ,0.0            ,""            ,0.0         ,inf         ," Sub-voff Slope Change due to Drain Voltage for FP2" )
+    `MPRco( eta0fp2        ,1.0e-9         ,""            ,0.0         ,inf         ," DIBL Parameter for FP2" )
+    `MPRoo( vdscalefp2     ,10.0           ,"V"           ,0.0         ,inf         ," DIBL Scaling VDS for FP2" )
+    `MPRcc( gamma0fp2      ,2.12e-12       ,""            ,0.0         ,1.0         ," Schrodinger-Poisson solution parameter for FP2" )
+    `MPRcc( gamma1fp2      ,3.73e-12       ,""            ,0.0         ,1.0         ," Schrodinger-Poisson solution parameter for FP2" )
+    `MPRoo( iminfp3        ,1.0e-15        ,"A"           ,0.0         ,inf         ," Minimum Drain Current FP3 region" )
+    `MPRcc( vofffp3        ,-75.0          ,"V"           ,-500.0      ,5           ," voff for FP3" )
+    `IPRco( dfp3           ,150.0e-9       ,"m"           ,0.1e-9      ,inf         ," Distance of FP3 from 2-DEG Charge" )
+    `IPRoo( lfp3           ,1.0e-6         ,"m"           ,0.0         ,inf         ," Length of FP3" )
+    `MPRoo( ktfp3          ,50.0e-3        ,""            ,-inf        ,inf         ," Temperature Dependence for vofffp3" )
+    `MPRco( u0fp3          ,100e-3         ,"m^2/(V * s)" ,0.0         ,inf         ," FP3 region mobility" )
+    `MPRco( vsatfp3        ,100e+3         ,"m/s"         ,0.0         ,inf         ," Saturation Velocity of FP3 region" )
+    `MPRco( nfactorfp3     ,0.5            ,""            ,0.0         ,inf         ," Sub-voff Slope parameters for FP3" )
+    `MPRco( cdscdfp3       ,0.0            ,""            ,0.0         ,inf         ," Sub-voff Slope Change due to Drain Voltage for FP3" )
+    `MPRco( eta0fp3        ,1.0e-9         ,""            ,0.0         ,inf         ," DIBL Parameter for FP3" )
+    `MPRoo( vdscalefp3     ,10.0           ,"V"           ,0.0         ,inf         ," DIBL Scaling VDS for FP3" )
+    `MPRcc( gamma0fp3      ,2.12e-12       ,""            ,0.0         ,1.0         ," Schrodinger-Poisson solution parameter for FP3" )
+    `MPRcc( gamma1fp3      ,3.73e-12       ,""            ,0.0         ,1.0         ," Schrodinger-Poisson solution parameter for FP3" )
+    `MPRoo( iminfp4        ,1.0e-15        ,"A"           ,0.0         ,inf         ," Minimum Drain Current FP4 region" )
+    `MPRcc( vofffp4        ,-100.0         ,"V"           ,-500.0      ,5           ," voff for FP4" )
+    `IPRco( dfp4           ,200.0e-9       ,"m"           ,0.1e-9      ,inf         ," Distance of FP4 from 2-DEG Charge" )
+    `IPRoo( lfp4           ,1.0e-6         ,"m"           ,0.0         ,inf         ," Length of FP4" )
+    `MPRoo( ktfp4          ,50.0e-3        ,""            ,-inf        ,inf         ," Temperature Dependence for vofffp4" )
+    `MPRco( u0fp4          ,100e-3         ,"m^2/(V * s)" ,0.0         ,inf         ," FP4 region mobility" )
+    `MPRco( vsatfp4        ,100e+3         ,"m/s"         ,0.0         ,inf         ," Saturation Velocity of FP4 region" )
+    `MPRco( nfactorfp4     ,0.5            ,""            ,0.0         ,inf         ," Sub-voff Slope parameters for FP4" )
+    `MPRco( cdscdfp4       ,0.0            ,""            ,0.0         ,inf         ," Sub-voff Slope Change due to Drain Voltage for FP4" )
+    `MPRco( eta0fp4        ,1.0e-9         ,""            ,0.0         ,inf         ," DIBL Parameter for FP4" )
+    `MPRoo( vdscalefp4     ,10.0           ,"V"           ,0.0         ,inf         ," DIBL Scaling VDS for FP4" )
+    `MPRcc( gamma0fp4      ,2.12e-12       ,""            ,0.0         ,1.0         ," Schrodinger-Poisson solution parameter for FP4" )
+    `MPRcc( gamma1fp4      ,3.73e-12       ,""            ,0.0         ,1.0         ," Schrodinger-Poisson solution parameter for FP4" )
+    
+////////// Capacitance Parameters //////////
+    `MPRco( cgso           ,0.0e-18        ,"F"           ,0.0         ,inf         ," Gate-source overlap capacitance" )
+    `MPRco( cgdo           ,0.0e-18        ,"F"           ,0.0         ,inf         ," Gate-drain overlap capacitance" )
+    `MPRco( cdso           ,0.0e-18        ,"F"           ,0.0         ,inf         ," Cds capacitance parameter" )
+    `MPRco( cgdl           ,0.0e-15        ,"F"           ,0.0         ,inf         ," Vds bias dependence of parasitic gate drain overlap capacitance" )
+    `MPRoo( vdsatcv        ,100.0          ,"V"           ,0.0         ,inf         ," Saturation voltage on drain side in CV Model" )
+    `MPRco( cbdo           ,0.0e-15        ,"F"           ,0.0         ,inf         ," Substrate capacitance parameter" )
+    `MPRco( cbso           ,0.0e-15        ,"F"           ,0.0         ,inf         ," Substrate capacitance parameter" )
+    `MPRco( cbgo           ,0.0e-15        ,"F"           ,0.0         ,inf         ," Substrate capacitance parameter" )
+    `MPRco( cfg            ,0.0e-18        ,"F"           ,0.0         ,inf         ," Fringing capacitance parameter" )
+    `MPRco( cfd            ,0.0e-18        ,"F"           ,0.0         ,inf         ," Fringing capacitance parameter" )
+    `MPRco( cfgd           ,0.0e-13        ,"F"           ,0.0         ,inf         ," Fringing capacitance parameter" )
+    `MPRco( cfgdsm         ,1.0e-24        ,"F"           ,0.0         ,inf         ," Capacitance smoothing parameter" )
+    `MPRco( cfgd0          ,0.0e-12        ,"F"           ,0.0         ,inf         ," Fringing capacitance parameter" )
+    `MPRco( cj0            ,0.0e-15        ,"F"           ,0.0         ,inf         ," Zero bias depletion capacitance" )
+    `MPRoo( vbi            ,0.9            ,"V"           ,0.0         ,inf         ," Built in potential" )
+    `MPRco( ktvbi          ,0.0            ,""            ,0.0         ,inf         ," Temperature dependence of built in potential" )
+    `MPRco( ktcfg          ,0.0e-3         ,""            ,0.0         ,inf         ," Temperature dependence of Fringing capacitance" )
+    `MPRco( ktcfgd         ,0.0e-3         ,""            ,0.0         ,inf         ," Temperature dependence of Fringing capacitance" )
+    `MPRoo( mz             ,0.5            ,""            ,0.0         ,1.0         ," Grading factor of depletion capacitance" )
+    `MPRco( aj             ,100.0e-3       ,""            ,0.0         ,inf         ," Limiting factor of depletion capacitance in forward bias region" )
+    `MPRco( dj             ,1.0            ,""            ,0.0         ,inf         ," Fitting parameter " )
+    
+////////// Quantum Mechanical Effects //////////
+    `MPRco( adosi          ,0.0            ,""            ,0           ,inf         ," Quantum mechanical effect pre-factor cum switch in inversion" )
+    `MPRco( bdosi          ,1.0            ,""            ,0           ,inf         ," Charge centroid parameter - slope of CV curve under QME in inversion" )
+    `MPRoo( qm0i           ,1.0e-3         ,""            ,0           ,inf         ," Charge centroid parameter - starting point for QME in inversion" )
+    `MPRco( adosfp1        ,0.0            ,""            ,0           ,inf         ," Quantum mechanical effect pre-factor cum switch in inversion" )
+    `MPRco( bdosfp1        ,1.0            ,""            ,0           ,inf         ," Charge centroid parameter - slope of CV curve under QME in inversion" )
+    `MPRoo( qm0fp1         ,1.0e-3         ,""            ,0           ,inf         ," Charge centroid parameter - starting point for QME in inversion" )
+    `MPRco( adosfp2        ,0.0            ,""            ,0           ,inf         ," Quantum mechanical effect pre-factor cum switch in inversion" )
+    `MPRco( bdosfp2        ,1.0            ,""            ,0           ,inf         ," Charge centroid parameter - slope of CV curve under QME in inversion" )
+    `MPRoo( qm0fp2         ,1.0e-3         ,""            ,0           ,inf         ," Charge centroid parameter - starting point for QME in inversion" )
+    `MPRco( adosfp3        ,0.0            ,""            ,0           ,inf         ," Quantum mechanical effect pre-factor cum switch in inversion" )
+    `MPRco( bdosfp3        ,1.0            ,""            ,0           ,inf         ," Charge centroid parameter - slope of CV curve under QME in inversion" )
+    `MPRoo( qm0fp3         ,1.0e-3         ,""            ,0           ,inf         ," Charge centroid parameter - starting point for QME in inversion" )
+    `MPRco( adosfp4        ,0.0            ,""            ,0           ,inf         ," Quantum mechanical effect pre-factor cum switch in inversion" )
+    `MPRco( bdosfp4        ,1.0            ,""            ,0           ,inf         ," Charge centroid parameter - slope of CV curve under QME in inversion" )
+    `MPRoo( qm0fp4         ,1.0e-3         ,""            ,0           ,inf         ," Charge centroid parameter - starting point for QME in inversion" )
+    
+////////// Cross Coupling Capacitance Parameters //////////
+    `MPRco( cfp1scale      ,0.0            ,""            ,0           ,inf         ," Coupling of charge under FP1" )
+    `MPRco( cfp2scale      ,0.0            ,""            ,0           ,inf         ," Coupling of charge under FP2" )
+    `MPRco( cfp3scale      ,0.0            ,""            ,0           ,inf         ," Coupling of charge under FP3" )
+    `MPRco( cfp4scale      ,0.0            ,""            ,0           ,inf         ," Coupling of charge under FP4" )
+    `MPRco( csubscalei     ,0.0            ,""            ,0           ,inf         ," Sub Capacitance scaling parameter" )
+    `MPRco( csubscale1     ,0.0            ,""            ,0           ,inf         ," Sub Capacitance scaling parameter" )
+    `MPRco( csubscale2     ,0.0            ,""            ,0           ,inf         ," Sub Capacitance scaling parameter" )
+    `MPRco( csubscale3     ,0.0            ,""            ,0           ,inf         ," Sub Capacitance scaling parameter" )
+    `MPRco( csubscale4     ,0.0            ,""            ,0           ,inf         ," Sub Capacitance scaling parameter" )
+    
+////////// Gate Resistance Parameters //////////
+    `MPIsw( rgatemod       ,0              ,""            ," Switch to turn on/off gate Resistance" )
+    `MPRco( xgw            ,0.0            ,"m"           ,0           ,inf         ," Distance from gate contact centre to dev edge" )
+    `IPIcc( ngcon          ,1              ,""            ,1           ,2           ," Number of gate contacts" )
+    `MPRco( rshg           ,1.0e-3         ,"ohm/square"  ,1e-3        ,inf         ," Gate sheet resistance" )
+    
+////////// Noise Model Parameters //////////
+    `MPIsw( fnmod          ,0              ,""            ," Switch to turn Flicker Noise Model  ON [fnmod=1] or OFF [fnmod=0]" )
+    `MPIsw( tnmod          ,0              ,""            ," Switch to turn Thermal Noise Model  ON [tnmod=1] or OFF [tnmod=0]" )
+    `MPRoo( noia           ,15.0e-12       ,""            ,-inf        ,inf         ," Flicker Noise parameter" )
+    `MPRco( noib           ,0.0            ,""            ,0           ,inf         ," Flicker Noise parameter" )
+    `MPRco( noic           ,0.0            ,""            ,0           ,inf         ," Flicker Noise parameter" )
+    `MPRoo( ef             ,1              ,""            ,0           ,inf         ," Exponent of frequency---Determines slope in log plot" )
+    `MPRoo( tnsc           ,1.0e27         ,""            ,0           ,inf         ," Thermal noise scaling parameter" )
+    
+////////// gdsmin For Convergence //////////
+    `MPRoo( gdsmin         ,1.0e-12        ,"S"           ,0           ,inf         ," Convergence Parameter" )
