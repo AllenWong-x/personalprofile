@@ -85,3 +85,8 @@ vgmin  = Voff_dibl_temp + Vtv*ln(t0*imin); \  //Vgs,min?
 vggmin = 0.5*((Vgs-vgmin) + sqrt((Vgs-vgmin)*(Vgs-vgmin) + 1.0e-4)) + vgmin; \   //Vgs,eff?
 Vg0    = vggmin - Voff_dibl_temp;  //Vg0=Vgs_eff-Voff_dibl_temp
 //Vtv=KB*Tdev*cdsc   Tdev=T+V(rth)  cdsc=1+NFACTOR+(CDSCD+cdscd_trap)*Vdsx
+
+
+
+目前能够将   陷阱效应    和    场板效应    以及    自热效应   接触区电阻    模型的开关关闭，
+剩下了栅电流、电容参数、量子经效应、交叠耦合电容参数、栅电阻、噪声模型、收敛参数gdsmin
