@@ -1,6 +1,6 @@
 
 目前能够将   陷阱效应    和    场板效应    以及    自热效应   接触区电阻    模型的开关关闭，
-剩下了栅电流、电容参数、量子经效应、交叠耦合电容参数、栅电阻、噪声模型、收敛参数gdsmin
+剩下了栅电流、电容参数、量子阱效应、交叠耦合电容参数、栅电阻、噪声模型、收敛参数gdsmin
 
 ////////// List Of Model Parameters //////////
     `MPRco( tnom           ,27.0           ,"K"           ,-`P_CELSIUS0,inf         ," Nominal Temperature in degree Celsius" )
